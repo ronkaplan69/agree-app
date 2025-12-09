@@ -15,6 +15,7 @@ import {
   EmailScreen,
   LoginScreen,
   VerifyCodeScreen,
+  PrinciplesScreen,
 } from './src/screens';
 import type { RootStackParamList } from './src/navigation/types';
 
@@ -97,6 +98,11 @@ function AppNavigator() {
           name="VerifyCode"
           component={VerifyCodeScreen}
           options={{ title: '' }}
+        />
+        <Stack.Screen
+          name="Principles"
+          component={PrinciplesScreen}
+          options={{ title: 'Principles' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

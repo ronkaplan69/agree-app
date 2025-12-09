@@ -15,7 +15,8 @@ export type User = {
 
 type RequestCodeResponse = {
   email: string;
-  isNewUser: boolean;
+  isNewUser?: boolean;
+  bypass?: boolean;
 };
 
 type VerifyCodeResponse = {

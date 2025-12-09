@@ -21,12 +21,18 @@ type Props = {
   route: RouteProp<RootStackParamList, 'VerifyCode'>;
 };
 
+const BYPASS_CODE = '111111';
+
 export function VerifyCodeScreen({ navigation, route }: Props) {
-  const { email } = route.params;
+  const { email, bypass } = route.params;
   const { verifyCode, requestCode } = useAuth();
   const isDarkMode = useColorScheme() === 'dark';
-  
-  const [code, setCode] = useState(['', '', '', '', '', '']);
+
+  // Pre-fill with bypass code if in bypass mode
+  const initialCode = bypass
+    ? BYPASS_CODE.split('')
+    : ['', '', '', '', '', ''];
+  const [code, setCode] = useState(initialCode);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
@@ -131,8 +137,21 @@ export function VerifyCodeScreen({ navigation, route }: Props) {
           Enter Code
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          We sent a 6-digit code to{'\n'}
-          <Text style={{ fontWeight: '600', color: colors.text }}>{email}</Text>
+          {bypass ? (
+            <>
+              <Text style={{ color: '#22c55e', fontWeight: '600' }}>
+                [BYPASS MODE]{'\n'}
+              </Text>
+              Code pre-filled: {BYPASS_CODE}
+            </>
+          ) : (
+            <>
+              We sent a 6-digit code to{'\n'}
+              <Text style={{ fontWeight: '600', color: colors.text }}>
+                {email}
+              </Text>
+            </>
+          )}
         </Text>
 
         <View style={styles.codeContainer}>

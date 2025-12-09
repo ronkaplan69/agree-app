@@ -61,8 +61,22 @@ export function HomeScreen({ navigation }: Props) {
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.text }]}>Agree</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Home screen content will go here
+          {isAuthenticated
+            ? 'Explore and agree with principles'
+            : 'Sign in to explore principles'}
         </Text>
+
+        {isAuthenticated && (
+          <TouchableOpacity
+            style={[
+              styles.principlesButton,
+              { backgroundColor: colors.primary },
+            ]}
+            onPress={() => navigation.navigate('Principles')}
+          >
+            <Text style={styles.principlesButtonText}>View Principles</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -101,5 +115,16 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
+  },
+  principlesButton: {
+    marginTop: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+  },
+  principlesButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
