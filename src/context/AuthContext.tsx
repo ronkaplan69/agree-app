@@ -7,14 +7,20 @@ type AuthState = {
   isAuthenticated: boolean;
 };
 
+type AuthResult = {
+  success: boolean;
+  error?: string;
+  bypass?: boolean;
+};
+
 type AuthContextType = AuthState & {
   requestCode: (
     email: string,
     name: string,
     birthYear: number,
     countryCode: string,
-  ) => Promise<{ success: boolean; error?: string }>;
-  login: (email: string) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<AuthResult>;
+  login: (email: string) => Promise<AuthResult>;
   verifyCode: (
     email: string,
     code: string,
@@ -75,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       countryCode,
     );
     if (result.status === 'success') {
-      return { success: true };
+      return { success: true, bypass: result.data?.bypass };
     }
     return { success: false, error: result.message || 'Failed to send code' };
   };
@@ -83,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string) => {
     const result = await authApi.login(email);
     if (result.status === 'success') {
-      return { success: true };
+      return { success: true, bypass: result.data?.bypass };
     }
     return { success: false, error: result.message || 'Failed to send code' };
   };

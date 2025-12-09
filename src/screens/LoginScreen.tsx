@@ -57,7 +57,10 @@ export function LoginScreen({ navigation }: Props) {
     setIsLoading(false);
 
     if (result.success) {
-      navigation.navigate('VerifyCode', { email: email.trim() });
+      navigation.navigate('VerifyCode', {
+        email: email.trim(),
+        bypass: result.bypass,
+      });
     } else {
       Alert.alert('Error', result.error || 'Failed to send verification code');
     }

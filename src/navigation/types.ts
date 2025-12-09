@@ -2,5 +2,6 @@ export type RootStackParamList = {
   Home: undefined;
   Email: undefined;
   Login: undefined;
-  VerifyCode: { email: string };
+  VerifyCode: { email: string; bypass?: boolean };
+  Principles: undefined;
 };
