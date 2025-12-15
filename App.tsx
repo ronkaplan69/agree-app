@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  StatusBar,
-  useColorScheme,
-  ActivityIndicator,
-  View,
-} from 'react-native';
+import { StatusBar, ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -16,22 +11,18 @@ import {
   LoginScreen,
   VerifyCodeScreen,
   PrinciplesScreen,
+  MyPrinciplesScreen,
+  PrincipleDetailScreen,
+  StatusScreen,
 } from './src/screens';
+import { useColors } from './src/theme/colors';
 import type { RootStackParamList } from './src/navigation/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AppNavigator() {
   const { isLoading } = useAuth();
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const colors = {
-    background: isDarkMode ? '#1a1a2e' : '#f8f9fa',
-    card: isDarkMode ? '#16213e' : '#ffffff',
-    text: isDarkMode ? '#eaeaea' : '#1a1a2e',
-    border: isDarkMode ? '#2d3748' : '#e2e8f0',
-    primary: '#6366f1',
-  };
+  const colors = useColors();
 
   if (isLoading) {
     return (
@@ -51,7 +42,7 @@ function AppNavigator() {
   return (
     <NavigationContainer
       theme={{
-        dark: isDarkMode,
+        dark: colors.isDarkMode,
         colors: {
           primary: colors.primary,
           background: colors.background,
@@ -104,17 +95,34 @@ function AppNavigator() {
           component={PrinciplesScreen}
           options={{ title: 'Principles' }}
         />
+        <Stack.Screen
+          name="MyPrinciples"
+          component={MyPrinciplesScreen}
+          options={{ title: 'My Principles' }}
+        />
+        <Stack.Screen
+          name="PrincipleDetail"
+          component={PrincipleDetailScreen}
+          options={{ title: 'Principle' }}
+        />
+        <Stack.Screen
+          name="Status"
+          component={StatusScreen}
+          options={{ title: 'Status & TBDs' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  const colors = useColors();
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <StatusBar
+        barStyle={colors.isDarkMode ? 'light-content' : 'dark-content'}
+      />
       <AuthProvider>
         <AppNavigator />
       </AuthProvider>
