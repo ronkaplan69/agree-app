@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  useColorScheme,
   SafeAreaView,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useColors } from '../theme/colors';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -17,14 +17,7 @@ type Props = {
 
 export function HomeScreen({ navigation }: Props) {
   const { isAuthenticated, user, logout } = useAuth();
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const colors = {
-    background: isDarkMode ? '#1a1a2e' : '#f8f9fa',
-    text: isDarkMode ? '#eaeaea' : '#1a1a2e',
-    textSecondary: isDarkMode ? '#a0a0a0' : '#6c757d',
-    primary: '#6366f1',
-  };
+  const colors = useColors();
 
   return (
     <SafeAreaView
@@ -67,15 +60,33 @@ export function HomeScreen({ navigation }: Props) {
         </Text>
 
         {isAuthenticated && (
-          <TouchableOpacity
-            style={[
-              styles.principlesButton,
-              { backgroundColor: colors.primary },
-            ]}
-            onPress={() => navigation.navigate('Principles')}
-          >
-            <Text style={styles.principlesButtonText}>View Principles</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={[
+                styles.principlesButton,
+                { backgroundColor: colors.primary },
+              ]}
+              onPress={() => navigation.navigate('Principles')}
+            >
+              <Text style={styles.principlesButtonText}>View Principles</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.statusButton, { borderColor: colors.border }]}
+              onPress={() => navigation.navigate('MyPrinciples')}
+            >
+              <Text style={[styles.statusButtonText, { color: colors.text }]}>
+                My Principles
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.statusButton, { borderColor: colors.border }]}
+              onPress={() => navigation.navigate('Status')}
+            >
+              <Text style={[styles.statusButtonText, { color: colors.text }]}>
+                Status & TBDs
+              </Text>
+            </TouchableOpacity>
+          </>
         )}
       </View>
     </SafeAreaView>
@@ -124,6 +135,17 @@ const styles = StyleSheet.create({
   },
   principlesButtonText: {
     color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  statusButton: {
+    marginTop: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  statusButtonText: {
     fontSize: 16,
     fontWeight: '600',
   },

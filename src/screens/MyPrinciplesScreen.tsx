@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -15,26 +14,28 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { principlesApi, Principle } from '../api';
 import { useColors } from '../theme/colors';
 import type { RootStackParamList } from '../navigation/types';
+import { WorldMap } from '../components/WorldMap';
+import { useAuth } from '../context/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'Principles'
+  'MyPrinciples'
 >;
 
-export function PrinciplesScreen() {
+export function MyPrinciplesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const colors = useColors();
+  const { user } = useAuth();
 
   const [principles, setPrinciples] = useState<Principle[]>([]);
   const [filteredPrinciples, setFilteredPrinciples] = useState<Principle[]>([]);
   const [searchText, setSearchText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
 
   const loadPrinciples = useCallback(async () => {
     try {
-      const result = await principlesApi.getAll(1, 100);
+      const result = await principlesApi.getMyAgreed(1, 100);
       if (result.status === 'success' && result.data) {
         setPrinciples(result.data.principles);
         setFilteredPrinciples(result.data.principles);
@@ -51,7 +52,8 @@ export function PrinciplesScreen() {
     loadPrinciples();
   }, [loadPrinciples]);
 
-  // Filter principles when search text changes
+  // Filter principles when search text changes (client-side filtering for now)
+  // TODO: Could be moved to server-side by passing search param to getMyAgreed
   useEffect(() => {
     if (!searchText.trim()) {
       setFilteredPrinciples(principles);
@@ -69,83 +71,6 @@ export function PrinciplesScreen() {
     loadPrinciples();
   };
 
-  const handleToggleAgreement = async (principle: Principle) => {
-    if (principle.userAgreed) {
-      await removeAgreement(principle._id);
-    } else {
-      await agree(principle._id);
-    }
-  };
-
-  const agree = async (id: string) => {
-    const result = await principlesApi.agree(id);
-    if (result.status === 'success' && result.data) {
-      // Update local state
-      setPrinciples(prev =>
-        prev.map(p =>
-          p._id === id
-            ? {
-                ...p,
-                agreementCount: result.data!.agreementCount,
-                userAgreed: true,
-              }
-            : p,
-        ),
-      );
-    } else {
-      Alert.alert('Error', result.message || 'Failed to agree');
-    }
-  };
-
-  const removeAgreement = async (id: string) => {
-    const result = await principlesApi.removeAgreement(id);
-    if (result.status === 'success' && result.data) {
-      // Update local state
-      setPrinciples(prev =>
-        prev.map(p =>
-          p._id === id
-            ? {
-                ...p,
-                agreementCount: result.data!.agreementCount,
-                userAgreed: false,
-              }
-            : p,
-        ),
-      );
-    } else {
-      Alert.alert('Error', result.message || 'Failed to remove agreement');
-    }
-  };
-
-  const handleAddPrinciple = async () => {
-    const text = searchText.trim();
-    if (!text) {
-      Alert.alert('Error', 'Please enter a principle text');
-      return;
-    }
-
-    if (text.length > 300) {
-      Alert.alert('Error', 'Principle text cannot exceed 300 characters');
-      return;
-    }
-
-    setIsAdding(true);
-    const result = await principlesApi.create(text);
-    setIsAdding(false);
-
-    if (result.status === 'success' && result.data) {
-      // Add to list and clear search
-      setPrinciples(prev => [result.data!.principle, ...prev]);
-      setSearchText('');
-      Alert.alert(
-        'Success',
-        'Principle created and you automatically agree with it!',
-      );
-    } else {
-      Alert.alert('Error', result.message || 'Failed to create principle');
-    }
-  };
-
   const handleNavigateToDetails = (principle: Principle) => {
     navigation.navigate('PrincipleDetail', { principle });
   };
@@ -156,9 +81,7 @@ export function PrinciplesScreen() {
         style={[
           styles.principleCard,
           {
-            backgroundColor: item.userAgreed
-              ? colors.cardHighlight
-              : colors.card,
+            backgroundColor: colors.cardHighlight,
             borderColor: colors.border,
           },
         ]}
@@ -175,28 +98,6 @@ export function PrinciplesScreen() {
             {item.agreementCount}{' '}
             {item.agreementCount === 1 ? 'person agrees' : 'people agree'}
           </Text>
-          <TouchableOpacity
-            style={[
-              styles.agreeButton,
-              {
-                backgroundColor: item.userAgreed
-                  ? colors.primary
-                  : 'transparent',
-                borderColor: item.userAgreed ? colors.primary : '#5cb885',
-              },
-            ]}
-            onPress={() => handleToggleAgreement(item)}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.agreeButtonIcon,
-                { color: item.userAgreed ? '#fff' : colors.textSecondary },
-              ]}
-            >
-              ✓
-            </Text>
-          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -212,7 +113,12 @@ export function PrinciplesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Search/Add Box */}
+      {/* World Map */}
+      <View style={styles.mapContainer}>
+        <WorldMap userId={user?.id} />
+      </View>
+
+      {/* Search Box */}
       <View style={styles.searchContainer}>
         <TextInput
           style={[
@@ -223,44 +129,13 @@ export function PrinciplesScreen() {
               color: colors.text,
             },
           ]}
-          placeholder="Search or add a principle..."
+          placeholder="Search your principles..."
           placeholderTextColor={colors.textSecondary}
           value={searchText}
           onChangeText={setSearchText}
           multiline
-          maxLength={300}
         />
-        <TouchableOpacity
-          style={[
-            styles.addButton,
-            { backgroundColor: colors.primary },
-            isAdding && styles.buttonDisabled,
-          ]}
-          onPress={handleAddPrinciple}
-          disabled={isAdding || !searchText.trim()}
-        >
-          {isAdding ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.addButtonText}>Add</Text>
-          )}
-        </TouchableOpacity>
       </View>
-
-      {/* Character count */}
-      {searchText.length > 0 && (
-        <Text
-          style={[
-            styles.charCount,
-            {
-              color:
-                searchText.length > 300 ? colors.error : colors.textSecondary,
-            },
-          ]}
-        >
-          {searchText.length}/300
-        </Text>
-      )}
 
       {/* Principles List */}
       <FlatList
@@ -279,8 +154,8 @@ export function PrinciplesScreen() {
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               {searchText
-                ? 'No principles match your search.\nBe the first to add this one!'
-                : 'No principles yet.\nBe the first to add one!'}
+                ? 'No principles match your search.'
+                : "You haven't agreed with any principles yet.\nGo to Principles to get started!"}
             </Text>
           </View>
         }
@@ -298,13 +173,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  searchContainer: {
-    flexDirection: 'row',
+  mapContainer: {
     padding: 16,
-    gap: 12,
+    paddingBottom: 8,
+  },
+  searchContainer: {
+    padding: 16,
+    paddingTop: 8,
   },
   searchInput: {
-    flex: 1,
     minHeight: 48,
     maxHeight: 100,
     borderWidth: 1,
@@ -312,32 +189,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-  },
-  addButton: {
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  charCount: {
-    fontSize: 12,
-    textAlign: 'right',
-    paddingHorizontal: 16,
-    marginTop: -8,
-  },
-  hint: {
-    fontSize: 12,
-    textAlign: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
   },
   listContent: {
     padding: 16,
@@ -356,23 +207,10 @@ const styles = StyleSheet.create({
   },
   principleFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
   agreementCount: {
     fontSize: 13,
-  },
-  agreeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  agreeButtonIcon: {
-    fontSize: 16,
-    fontWeight: '700',
   },
   emptyContainer: {
     padding: 40,

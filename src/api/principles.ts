@@ -72,9 +72,38 @@ export const principlesApi = {
   /**
    * Get principles user agreed with
    */
-  async getMyAgreed() {
-    return api.get<{ principles: Principle[]; count: number }>(
-      '/principles/user/agreed',
-    );
+  async getMyAgreed(page = 1, limit = 100, search?: string) {
+    let endpoint = `/principles/user/agreed?page=${page}&limit=${limit}`;
+    if (search) {
+      endpoint += `&search=${encodeURIComponent(search)}`;
+    }
+    return api.get<PrinciplesResponse>(endpoint);
+  },
+
+  /**
+   * Get country agreement percentages for a set of principles
+   * Returns the average percentage of principles that users from each country agree with
+   *
+   * @param principleIds - Array of principle IDs. If provided, userId is ignored.
+   * @param userId - User ID. Used only if principleIds is not provided. Fetches all principles this user agrees with.
+   */
+  async getCountryAgreementPercentages(
+    principleIds?: string[],
+    userId?: string,
+  ) {
+    return api.post<{
+      countries: Array<{
+        country: {
+          _id: string;
+          name: string;
+          code: string;
+        };
+        percentage: number; // Average percentage of principles that users in this country agree with
+      }>;
+      count: number;
+    }>('/principles/analytics/country-agreement-percentages', {
+      ...(principleIds && { principleIds }),
+      ...(userId && { userId }),
+    });
   },
 };
