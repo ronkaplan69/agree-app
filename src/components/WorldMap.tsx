@@ -45,9 +45,9 @@ function percentageToColor(percentage: number): string {
   const grayG = 200;
   const grayB = 200;
 
-  const greenR = 0; // #00CC00 - hard saturated green
-  const greenG = 204;
-  const greenB = 0;
+  const greenR = 5; // #00CC00 - hard saturated green
+  const greenG = 20;
+  const greenB = 230;
 
   // Interpolate based on percentage (0-100)
   const t = percentage / 100;

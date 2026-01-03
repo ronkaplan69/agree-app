@@ -19,6 +19,12 @@ type AuthContextType = AuthState & {
     name: string,
     birthYear: number,
     countryCode: string,
+    location?: {
+      city?: string;
+      state?: string;
+      lat?: number;
+      lon?: number;
+    },
   ) => Promise<AuthResult>;
   login: (email: string) => Promise<AuthResult>;
   verifyCode: (
@@ -73,12 +79,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     name: string,
     birthYear: number,
     countryCode: string,
+    location?: {
+      city?: string;
+      state?: string;
+      lat?: number;
+      lon?: number;
+    },
   ) => {
     const result = await authApi.requestCode(
       email,
       name,
       birthYear,
       countryCode,
+      location,
     );
     if (result.status === 'success') {
       return { success: true, bypass: result.data?.bypass };

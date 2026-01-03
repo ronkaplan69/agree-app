@@ -6,6 +6,7 @@ export type Principle = {
   createdBy: string;
   agreementCount: number;
   userAgreed: boolean;
+  strength: number; // 0-100
   createdAt: string;
 };
 
@@ -66,6 +67,13 @@ export const principlesApi = {
    * Remove agreement
    */
   async removeAgreement(id: string) {
+    return api.delete<AgreementResponse>(`/principles/${id}/agree`);
+  },
+
+  /**
+   * Disagree with a principle
+   */
+  async disagree(id: string) {
     return api.delete<AgreementResponse>(`/principles/${id}/agree`);
   },
 

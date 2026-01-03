@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,29 +15,34 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { principlesApi, Principle } from '../api';
 import { useColors } from '../theme/colors';
 import type { RootStackParamList } from '../navigation/types';
+import { SwipeablePrincipleCard } from '../components/SwipeablePrincipleCard';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'Principles'
 >;
 
+const DEBOUNCE_DELAY = 500; // milliseconds
+
 export function PrinciplesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const colors = useColors();
 
   const [principles, setPrinciples] = useState<Principle[]>([]);
-  const [filteredPrinciples, setFilteredPrinciples] = useState<Principle[]>([]);
   const [searchText, setSearchText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadPrinciples = useCallback(async () => {
+  const loadPrinciples = useCallback(async (search?: string) => {
     try {
-      const result = await principlesApi.getAll(1, 100);
+      setIsLoading(true);
+      console.log('Loading principles with search:', search);
+      const result = await principlesApi.getAll(1, 100, search);
       if (result.status === 'success' && result.data) {
         setPrinciples(result.data.principles);
-        setFilteredPrinciples(result.data.principles);
+        console.log('Principles:', result.data.principles);
       }
     } catch (error) {
       console.log('Failed to load principles:', error);
@@ -47,73 +52,67 @@ export function PrinciplesScreen() {
     }
   }, []);
 
+  const isInitialMount = useRef(true);
+
+  // Initial load
   useEffect(() => {
     loadPrinciples();
+    isInitialMount.current = false;
   }, [loadPrinciples]);
 
-  // Filter principles when search text changes
+  // Debounced search effect
   useEffect(() => {
-    if (!searchText.trim()) {
-      setFilteredPrinciples(principles);
-    } else {
-      const query = searchText.toLowerCase();
-      const filtered = principles.filter(p =>
-        p.text.toLowerCase().includes(query),
-      );
-      setFilteredPrinciples(filtered);
+    // Skip debounce on initial mount (handled by initial load effect)
+    if (isInitialMount.current) {
+      return;
     }
-  }, [searchText, principles]);
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set up debounce timer - only set loading when API call actually happens
+    debounceTimerRef.current = setTimeout(() => {
+      const searchQuery = searchText.trim() || undefined;
+      console.log('Debounced search triggered with query:', searchQuery);
+      loadPrinciples(searchQuery);
+    }, DEBOUNCE_DELAY);
+
+    // Cleanup on unmount or when searchText changes
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [searchText, loadPrinciples]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    loadPrinciples();
+    const searchQuery = searchText.trim() || undefined;
+    loadPrinciples(searchQuery);
   };
 
-  const handleToggleAgreement = async (principle: Principle) => {
-    if (principle.userAgreed) {
-      await removeAgreement(principle._id);
-    } else {
-      await agree(principle._id);
-    }
-  };
-
-  const agree = async (id: string) => {
-    const result = await principlesApi.agree(id);
-    if (result.status === 'success' && result.data) {
-      // Update local state
-      setPrinciples(prev =>
-        prev.map(p =>
-          p._id === id
-            ? {
-                ...p,
-                agreementCount: result.data!.agreementCount,
-                userAgreed: true,
-              }
-            : p,
-        ),
-      );
+  const handleSwipeRight = async (principle: Principle) => {
+    // Swipe right = agree
+    const result = await principlesApi.agree(principle._id);
+    if (result.status === 'success') {
+      // Remove from list since user has now interacted with it
+      setPrinciples(prev => prev.filter(p => p._id !== principle._id));
     } else {
       Alert.alert('Error', result.message || 'Failed to agree');
     }
   };
 
-  const removeAgreement = async (id: string) => {
-    const result = await principlesApi.removeAgreement(id);
-    if (result.status === 'success' && result.data) {
-      // Update local state
-      setPrinciples(prev =>
-        prev.map(p =>
-          p._id === id
-            ? {
-                ...p,
-                agreementCount: result.data!.agreementCount,
-                userAgreed: false,
-              }
-            : p,
-        ),
-      );
+  const handleSwipeLeft = async (principle: Principle) => {
+    // Swipe left = disagree
+    const result = await principlesApi.disagree(principle._id);
+    if (result.status === 'success') {
+      // Remove from list since user has now interacted with it
+      setPrinciples(prev => prev.filter(p => p._id !== principle._id));
     } else {
-      Alert.alert('Error', result.message || 'Failed to remove agreement');
+      Alert.alert('Error', result.message || 'Failed to disagree');
     }
   };
 
@@ -134,9 +133,9 @@ export function PrinciplesScreen() {
     setIsAdding(false);
 
     if (result.status === 'success' && result.data) {
-      // Add to list and clear search
-      setPrinciples(prev => [result.data!.principle, ...prev]);
+      // Clear search and reload principles to get fresh data from server
       setSearchText('');
+      await loadPrinciples();
       Alert.alert(
         'Success',
         'Principle created and you automatically agree with it!',
@@ -152,63 +151,14 @@ export function PrinciplesScreen() {
 
   const renderPrinciple = ({ item }: { item: Principle }) => {
     return (
-      <TouchableOpacity
-        style={[
-          styles.principleCard,
-          {
-            backgroundColor: item.userAgreed
-              ? colors.cardHighlight
-              : colors.card,
-            borderColor: colors.border,
-          },
-        ]}
-        onPress={() => handleNavigateToDetails(item)}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.principleText, { color: colors.text }]}>
-          {item.text}
-        </Text>
-        <View style={styles.principleFooter}>
-          <Text
-            style={[styles.agreementCount, { color: colors.textSecondary }]}
-          >
-            {item.agreementCount}{' '}
-            {item.agreementCount === 1 ? 'person agrees' : 'people agree'}
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.agreeButton,
-              {
-                backgroundColor: item.userAgreed
-                  ? colors.primary
-                  : 'transparent',
-                borderColor: item.userAgreed ? colors.primary : '#5cb885',
-              },
-            ]}
-            onPress={() => handleToggleAgreement(item)}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.agreeButtonIcon,
-                { color: item.userAgreed ? '#fff' : colors.textSecondary },
-              ]}
-            >
-              ✓
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+      <SwipeablePrincipleCard
+        principle={item}
+        onPress={handleNavigateToDetails}
+        onSwipeRight={handleSwipeRight}
+        onSwipeLeft={handleSwipeLeft}
+      />
     );
   };
-
-  if (isLoading) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -264,7 +214,7 @@ export function PrinciplesScreen() {
 
       {/* Principles List */}
       <FlatList
-        data={filteredPrinciples}
+        data={principles}
         keyExtractor={item => item._id}
         renderItem={renderPrinciple}
         contentContainerStyle={styles.listContent}
@@ -275,14 +225,27 @@ export function PrinciplesScreen() {
             tintColor={colors.primary}
           />
         }
+        ListHeaderComponent={
+          isLoading && !isRefreshing ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              {searchText
-                ? 'No principles match your search.\nBe the first to add this one!'
-                : 'No principles yet.\nBe the first to add one!'}
-            </Text>
-          </View>
+          isLoading ? (
+            <View style={styles.emptyContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                {searchText.trim()
+                  ? 'No principles match your search.\nBe the first to add this one!'
+                  : 'No principles yet.\nBe the first to add one!'}
+              </Text>
+            </View>
+          )
         }
       />
     </View>
@@ -343,36 +306,9 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 8,
   },
-  principleCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  principleText: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  principleFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingContainer: {
+    paddingVertical: 16,
     alignItems: 'center',
-  },
-  agreementCount: {
-    fontSize: 13,
-  },
-  agreeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  agreeButtonIcon: {
-    fontSize: 16,
-    fontWeight: '700',
   },
   emptyContainer: {
     padding: 40,

@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  TouchableOpacity,
   FlatList,
   ActivityIndicator,
   RefreshControl,
@@ -16,6 +15,7 @@ import { useColors } from '../theme/colors';
 import type { RootStackParamList } from '../navigation/types';
 import { WorldMap } from '../components/WorldMap';
 import { useAuth } from '../context/AuthContext';
+import { PrincipleCard } from '../components/PrincipleCard';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -38,6 +38,7 @@ export function MyPrinciplesScreen() {
       const result = await principlesApi.getMyAgreed(1, 100);
       if (result.status === 'success' && result.data) {
         setPrinciples(result.data.principles);
+        console.log('MyPrinciples:', result.data.principles);
         setFilteredPrinciples(result.data.principles);
       }
     } catch (error) {
@@ -77,29 +78,11 @@ export function MyPrinciplesScreen() {
 
   const renderPrinciple = ({ item }: { item: Principle }) => {
     return (
-      <TouchableOpacity
-        style={[
-          styles.principleCard,
-          {
-            backgroundColor: colors.cardHighlight,
-            borderColor: colors.border,
-          },
-        ]}
-        onPress={() => handleNavigateToDetails(item)}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.principleText, { color: colors.text }]}>
-          {item.text}
-        </Text>
-        <View style={styles.principleFooter}>
-          <Text
-            style={[styles.agreementCount, { color: colors.textSecondary }]}
-          >
-            {item.agreementCount}{' '}
-            {item.agreementCount === 1 ? 'person agrees' : 'people agree'}
-          </Text>
-        </View>
-      </TouchableOpacity>
+      <PrincipleCard
+        principle={item}
+        onPress={handleNavigateToDetails}
+        variant="highlighted"
+      />
     );
   };
 
@@ -193,24 +176,6 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingTop: 8,
-  },
-  principleCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  principleText: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  principleFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  agreementCount: {
-    fontSize: 13,
   },
   emptyContainer: {
     padding: 40,
