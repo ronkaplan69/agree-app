@@ -6,10 +6,6 @@ This app uses Mapbox for displaying interactive world maps. Follow these steps t
 
 1. Go to [https://account.mapbox.com/](https://account.mapbox.com/)
 2. Create a free account (or sign in if you have one)
-   account my mail. pass: Uwm$%c3HUqX4ze9
-   public token: pk.eyJ1Ijoicm9ua2FwbGFuNjkiLCJhIjoiY21qMGJmc2k4MDB3dzNpcW41ZTRva2t1MCJ9.77z52Tm7f6xlOFTvtvA-HA
-
-secret token: sk.eyJ1Ijoicm9ua2FwbGFuNjkiLCJhIjoiY21qMGMyYzBpMDVpYTNjcnphbnIycnp4NyJ9.Ug_BPX-b7KYFbu0mFenlng
 
 ## Step 2: Get Your Access Tokens
 

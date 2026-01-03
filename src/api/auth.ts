@@ -44,10 +44,21 @@ export const authApi = {
     name: string,
     birthYear: number,
     countryCode: string,
+    location?: {
+      city?: string;
+      state?: string;
+      lat?: number;
+      lon?: number;
+    },
   ) {
+    // Only include location in body if it's provided
+    const body: any = { email, name, birthYear, countryCode };
+    if (location) {
+      body.location = location;
+    }
     return api.post<RequestCodeResponse>(
       '/auth/request-code',
-      { email, name, birthYear, countryCode },
+      body,
       false, // No auth required
     );
   },

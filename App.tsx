@@ -7,7 +7,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import {
   HomeScreen,
-  EmailScreen,
+  RegisterScreen,
   LoginScreen,
   VerifyCodeScreen,
   PrinciplesScreen,
@@ -76,8 +76,8 @@ function AppNavigator() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="Email"
-          component={EmailScreen}
+          name="Register"
+          component={RegisterScreen}
           options={{ title: 'Register' }}
         />
         <Stack.Screen
@@ -93,7 +93,10 @@ function AppNavigator() {
         <Stack.Screen
           name="Principles"
           component={PrinciplesScreen}
-          options={{ title: 'Principles' }}
+          options={{
+            title: 'Principles',
+            gestureEnabled: false, // Disable back gesture to allow right swipes
+          }}
         />
         <Stack.Screen
           name="MyPrinciples"

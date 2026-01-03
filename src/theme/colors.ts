@@ -4,6 +4,7 @@ export const palette = {
   // Primary greens
   primary: '#2e9b5f',
   primaryLight: '#5cb885',
+  primaryDark: '#247a4a',
 
   // Dark mode
   dark: {
@@ -13,6 +14,9 @@ export const palette = {
     text: '#e8f0eb',
     textSecondary: '#8fa898',
     border: '#2d4a38',
+    inputBg: '#0f1f15',
+    inputBorder: '#2d4a38',
+    modalBg: '#152b1c',
   },
 
   // Light mode
@@ -23,6 +27,9 @@ export const palette = {
     text: '#1a2e20',
     textSecondary: '#5c7365',
     border: '#d4e5db',
+    inputBg: '#f4f9f6',
+    inputBorder: '#d4e5db',
+    modalBg: '#ffffff',
   },
 
   // Semantic
@@ -41,11 +48,14 @@ export function useColors() {
     text: mode.text,
     textSecondary: mode.textSecondary,
     border: mode.border,
+    inputBg: mode.inputBg,
+    inputBorder: mode.inputBorder,
+    modalBg: mode.modalBg,
     primary: palette.primary,
     primaryLight: palette.primaryLight,
+    primaryDark: palette.primaryDark,
     error: palette.error,
     white: palette.white,
     isDarkMode,
   };
 }
-
