@@ -42,8 +42,9 @@ export function StatusScreen({ navigation: _navigation }: Props) {
       'Map will show a different details level by zoom. Start by color to represent agreement strengh, then as you zoom in show the number and percentage, then specific users and their agreement strength with the principle or principles selected.',
     ],
     Profile: [
-      'Country and nickname are required',
       'Add an optional profile picture',
+      'There will be a profile page where users can edit all personal fields.',
+      'Register screen might need to be a wizard',
       'App will encourage users to set a more precise location so it will show much better on maps. This can be done automatically on registration and in profile. TBD most auto and least denamding way to do this.',
     ],
   };

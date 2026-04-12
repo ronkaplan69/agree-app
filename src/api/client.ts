@@ -6,6 +6,7 @@ type RequestOptions = {
   body?: unknown;
   headers?: Record<string, string>;
   auth?: boolean; // Whether to include auth token (default: true)
+  signal?: AbortSignal; // AbortSignal for cancelling the request
 };
 
 type ApiResponse<T> = {
@@ -73,8 +74,14 @@ class ApiClient {
       config.body = JSON.stringify(body);
     }
 
+    // Use provided signal or create a new one for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+    
+    // If a signal is provided, combine it with the timeout signal
+    if (options.signal) {
+      options.signal.addEventListener('abort', () => controller.abort());
+    }
     config.signal = controller.signal;
 
     try {
@@ -120,8 +127,8 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'GET', auth });
   }
 
-  post<T>(endpoint: string, body?: unknown, auth = true) {
-    return this.request<T>(endpoint, { method: 'POST', body, auth });
+  post<T>(endpoint: string, body?: unknown, signal?: AbortSignal, auth = true) {
+    return this.request<T>(endpoint, { method: 'POST', body, signal, auth });
   }
 
   put<T>(endpoint: string, body?: unknown, auth = true) {

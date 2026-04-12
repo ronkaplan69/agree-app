@@ -94,10 +94,21 @@ export const principlesApi = {
    *
    * @param principleIds - Array of principle IDs. If provided, userId is ignored.
    * @param userId - User ID. Used only if principleIds is not provided. Fetches all principles this user agrees with.
+   * @param mapState - Current map state (zoom, center, bounds) - used for detail level on server
+   * @param signal - AbortSignal for cancelling the request
    */
   async getCountryAgreementPercentages(
     principleIds?: string[],
     userId?: string,
+    mapState?: {
+      zoom: number;
+      center: [number, number];
+      bounds: {
+        ne: [number, number];
+        sw: [number, number];
+      };
+    },
+    signal?: AbortSignal,
   ) {
     return api.post<{
       countries: Array<{
@@ -109,9 +120,21 @@ export const principlesApi = {
         percentage: number; // Average percentage of principles that users in this country agree with
       }>;
       count: number;
-    }>('/principles/analytics/country-agreement-percentages', {
-      ...(principleIds && { principleIds }),
-      ...(userId && { userId }),
-    });
+    }>(
+      '/principles/analytics/country-agreement-percentages',
+      {
+        ...(principleIds && { principleIds }),
+        ...(userId && { userId }),
+        ...(mapState && {
+          mapState: {
+            zoom: mapState.zoom,
+            center: mapState.center,
+            bounds: mapState.bounds,
+          },
+        }),
+      },
+      signal,
+      true,
+    );
   },
 };
